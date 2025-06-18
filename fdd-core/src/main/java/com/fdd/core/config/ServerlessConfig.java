@@ -6,6 +6,7 @@ import java.util.List;
 
 /**
  * Configuration classes for serverless.yml parsing
+ * Updated to support monitoring configuration
  */
 public class ServerlessConfig {
 
@@ -21,6 +22,7 @@ public class ServerlessConfig {
         private Map<String, FunctionConfig> functions;
         private SecurityConfig security;
         private DiscoveryConfig discovery;
+        private MonitoringConfig monitoring;  // Added monitoring support
 
         public String getService() { return service; }
         public void setService(String service) { this.service = service; }
@@ -36,6 +38,9 @@ public class ServerlessConfig {
 
         public DiscoveryConfig getDiscovery() { return discovery; }
         public void setDiscovery(DiscoveryConfig discovery) { this.discovery = discovery; }
+
+        public MonitoringConfig getMonitoring() { return monitoring; }
+        public void setMonitoring(MonitoringConfig monitoring) { this.monitoring = monitoring; }
     }
 
     public static class ProviderConfig {
@@ -150,5 +155,23 @@ public class ServerlessConfig {
 
         public String getEndpoint() { return endpoint; }
         public void setEndpoint(String endpoint) { this.endpoint = endpoint; }
+    }
+
+    // New MonitoringConfig class to support monitoring section
+    public static class MonitoringConfig {
+        private boolean enabled;
+        @JsonProperty("metrics-endpoint")
+        private String metricsEndpoint;
+        @JsonProperty("detailed-logging")
+        private boolean detailedLogging;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+        public String getMetricsEndpoint() { return metricsEndpoint; }
+        public void setMetricsEndpoint(String metricsEndpoint) { this.metricsEndpoint = metricsEndpoint; }
+
+        public boolean isDetailedLogging() { return detailedLogging; }
+        public void setDetailedLogging(boolean detailedLogging) { this.detailedLogging = detailedLogging; }
     }
 }
