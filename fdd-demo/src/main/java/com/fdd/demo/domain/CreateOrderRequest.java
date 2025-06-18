@@ -1,12 +1,11 @@
+// Enhanced CreateOrderRequest.java
 package com.fdd.demo.domain;
 
-/**
- * Request to create an order
- */
 public class CreateOrderRequest {
     private UserData userData;
     private String productId;
     private int quantity;
+    private String paymentMethod;
 
     public CreateOrderRequest() {}
 
@@ -14,6 +13,14 @@ public class CreateOrderRequest {
         this.userData = userData;
         this.productId = productId;
         this.quantity = quantity;
+        this.paymentMethod = "CARD"; // Default payment method
+    }
+
+    public CreateOrderRequest(UserData userData, String productId, int quantity, String paymentMethod) {
+        this.userData = userData;
+        this.productId = productId;
+        this.quantity = quantity;
+        this.paymentMethod = paymentMethod;
     }
 
     // Getters and setters
@@ -25,4 +32,7 @@ public class CreateOrderRequest {
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 }

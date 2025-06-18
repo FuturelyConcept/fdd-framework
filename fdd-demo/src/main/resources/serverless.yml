@@ -19,14 +19,55 @@
         memory: "256MB"
         timeout: "30s"
 
+    inventoryChecker:
+      name: "com.ecommerce.inventory.check"
+      component: "inventoryChecker"
+      input: "com.fdd.demo.domain.InventoryCheckRequest"
+      output: "com.fdd.demo.domain.InventoryResult"
+      security:
+        group: "inventory-management"
+        roles: ["INVENTORY_CHECKER"]
+        authentication: "JWT"
+      deployment:
+        cloud: "aws"
+        memory: "256MB"
+        timeout: "30s"
+
+    paymentProcessor:
+      name: "com.ecommerce.payment.process"
+      component: "paymentProcessor"
+      input: "com.fdd.demo.domain.PaymentRequest"
+      output: "com.fdd.demo.domain.PaymentResult"
+      security:
+        group: "financial-operations"
+        roles: ["PAYMENT_PROCESSOR"]
+        authentication: "JWT"
+        elevated: true
+      deployment:
+        cloud: "aws"
+        memory: "512MB"
+        timeout: "60s"
+
   security:
     jwt:
       issuer: "https://auth.company.com"
+      audience: "ecommerce-functions"
     groups:
       user-management:
-        description: "User validation functions"
+        description: "User validation and management functions"
+        allowed-callers: ["order-management", "user-interface"]
+      inventory-management:
+        description: "Inventory checking and management functions"
+        allowed-callers: ["order-management", "fulfillment"]
+      financial-operations:
+        description: "Payment processing and financial functions"
         allowed-callers: ["order-management"]
 
   discovery:
     enabled: true
     endpoint: "/functions"
+
+  monitoring:
+    enabled: true
+    metrics-endpoint: "/metrics"
+    detailed-logging: true

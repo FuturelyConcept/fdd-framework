@@ -1,7 +1,7 @@
 package com.fdd.demo;
 
-import com.fdd.demo.domain.UserData;
-import com.fdd.demo.domain.ValidationResult;
+import com.fdd.demo.domain.*;
+import com.fdd.demo.functions.OrderProcessor;
 import com.fdd.core.registry.FunctionRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +14,13 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Integration test for FDD Demo Application
+ * Comprehensive integration test for FDD Demo Application
  */
 @SpringBootTest(classes = FddDemoApplication.class)
 @TestPropertySource(properties = {
         "fdd.function.enabled=true",
-        "fdd.function.discovery.enabled=true"
+        "fdd.function.discovery.enabled=true",
+        "logging.level.com.fdd=DEBUG"
 })
 class FddDemoApplicationTest {
 
@@ -30,16 +31,26 @@ class FddDemoApplicationTest {
     @Qualifier("userValidator")
     private Function<UserData, ValidationResult> userValidator;
 
+    @Autowired
+    @Qualifier("inventoryChecker")
+    private Function<InventoryCheckRequest, InventoryResult> inventoryChecker;
+
+    @Autowired
+    private OrderProcessor orderProcessor;
+
     @Test
     void contextLoads() {
         assertThat(functionRegistry).isNotNull();
         assertThat(userValidator).isNotNull();
+        assertThat(inventoryChecker).isNotNull();
+        assertThat(orderProcessor).isNotNull();
     }
 
     @Test
-    void functionRegistryContainsUserValidator() {
+    void functionRegistryContainsAllFunctions() {
         assertThat(functionRegistry.isRegistered("userValidator")).isTrue();
-        assertThat(functionRegistry.size()).isGreaterThan(0);
+        assertThat(functionRegistry.isRegistered("inventoryChecker")).isTrue();
+        assertThat(functionRegistry.size()).isGreaterThanOrEqualTo(2);
     }
 
     @Test
@@ -62,10 +73,59 @@ class FddDemoApplicationTest {
     }
 
     @Test
-    void userValidationRejectsNullUser() {
-        ValidationResult result = userValidator.apply(null);
+    void inventoryCheckFunctionWorks() {
+        // Test available inventory
+        InventoryCheckRequest request = new InventoryCheckRequest("product-123", 50);
+        InventoryResult result = inventoryChecker.apply(request);
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.getMessage()).contains("null");
+        assertThat(result.isAvailable()).isTrue();
+        assertThat(result.getAvailableQuantity()).isEqualTo(50);
+    }
+
+    @Test
+    void inventoryCheckRejectsExcessiveQuantity() {
+        // Test excessive quantity
+        InventoryCheckRequest request = new InventoryCheckRequest("product-123", 150);
+        InventoryResult result = inventoryChecker.apply(request);
+
+        assertThat(result.isAvailable()).isFalse();
+        assertThat(result.getMessage()).contains("Insufficient inventory");
+    }
+
+    @Test
+    void orderProcessorComposesMultipleFunctions() {
+        // Test successful order creation
+        UserData validUser = new UserData("John Doe", "john@example.com", 25);
+        CreateOrderRequest request = new CreateOrderRequest(validUser, "product-123", 50);
+
+        OrderResult result = orderProcessor.createOrder(request);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getOrderId()).isNotNull();
+        assertThat(result.getOrderId()).startsWith("order-");
+    }
+
+    @Test
+    void orderProcessorRejectsInvalidUser() {
+        // Test order rejection due to invalid user
+        UserData invalidUser = new UserData("Jane", "jane@example.com", 17);
+        CreateOrderRequest request = new CreateOrderRequest(invalidUser, "product-123", 50);
+
+        OrderResult result = orderProcessor.createOrder(request);
+
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getMessage()).contains("User validation failed");
+    }
+
+    @Test
+    void orderProcessorRejectsInsufficientInventory() {
+        // Test order rejection due to insufficient inventory
+        UserData validUser = new UserData("John Doe", "john@example.com", 25);
+        CreateOrderRequest request = new CreateOrderRequest(validUser, "product-123", 150);
+
+        OrderResult result = orderProcessor.createOrder(request);
+
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getMessage()).contains("Inventory check failed");
     }
 }

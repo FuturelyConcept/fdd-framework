@@ -10,7 +10,6 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 
 import java.util.function.Function;
 import java.util.Map;
@@ -19,45 +18,55 @@ import java.util.Map;
  * Auto-configuration for FDD framework
  */
 @AutoConfiguration
-@ComponentScan(basePackages = {"com.fdd.core", "com.fdd.demo"})
 @ConditionalOnProperty(prefix = "fdd.function", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FddAutoConfiguration implements ApplicationListener<ApplicationReadyEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(FddAutoConfiguration.class);
 
-    @Autowired
+    @Autowired(required = false)
     private ApplicationContext applicationContext;
 
-    @Autowired
+    @Autowired(required = false)
     private FunctionRegistry functionRegistry;
 
-    @Autowired
+    @Autowired(required = false)
     private ServerlessConfigLoader configLoader;
 
     /**
-     * Create FunctionRegistry bean if not already present
+     * Create FunctionRegistry bean
      */
     @Bean
     public FunctionRegistry functionRegistry() {
+        logger.debug("Creating FunctionRegistry bean");
         return new FunctionRegistry();
     }
 
     /**
-     * Create ServerlessConfigLoader bean if not already present
+     * Create ServerlessConfigLoader bean
      */
     @Bean
     public ServerlessConfigLoader serverlessConfigLoader() {
+        logger.debug("Creating ServerlessConfigLoader bean");
         return new ServerlessConfigLoader();
     }
 
+    /**
+     * Create FunctionDiscoveryController bean if discovery is enabled
+     */
     @Bean
     @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FunctionDiscoveryController functionDiscoveryController() {
+    public FunctionDiscoveryController functionDiscoveryController(FunctionRegistry functionRegistry) {
+        logger.debug("Creating FunctionDiscoveryController bean");
         return new FunctionDiscoveryController(functionRegistry);
     }
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        if (applicationContext == null || functionRegistry == null || configLoader == null) {
+            logger.warn("FDD Framework dependencies not available, skipping initialization");
+            return;
+        }
+
         logger.info("FDD Framework starting up - scanning for functions...");
 
         try {
