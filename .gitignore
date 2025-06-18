@@ -1,0 +1,34 @@
+﻿# IDE
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+dependency-reduced-pom.xml
+
+# Compiled
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Spring Boot
+HELP.md
+
+# Security
+application-local.yml
+*.key
+*.pem

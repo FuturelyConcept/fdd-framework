@@ -1,0 +1,32 @@
+﻿serverless:
+  service: fdd-demo
+  provider:
+    name: aws
+    runtime: java17
+
+  functions:
+    userValidator:
+      name: "com.ecommerce.user.validate"
+      component: "userValidator"
+      input: "com.fdd.demo.domain.UserData"
+      output: "com.fdd.demo.domain.ValidationResult"
+      security:
+        group: "user-management"
+        roles: ["USER_VALIDATOR"]
+        authentication: "JWT"
+      deployment:
+        cloud: "aws"
+        memory: "256MB"
+        timeout: "30s"
+
+  security:
+    jwt:
+      issuer: "https://auth.company.com"
+    groups:
+      user-management:
+        description: "User validation functions"
+        allowed-callers: ["order-management"]
+
+  discovery:
+    enabled: true
+    endpoint: "/functions"

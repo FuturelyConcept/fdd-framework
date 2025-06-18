@@ -1,0 +1,29 @@
+﻿spring:
+  application:
+    name: fdd-demo
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.example.com
+
+fdd:
+  function:
+    discovery:
+      enabled: true
+    registry:
+      scan-packages: com.fdd.demo
+  security:
+    context-propagation:
+      enabled: true
+      mode: jwt
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,functions
+
+logging:
+  level:
+    com.fdd: DEBUG
