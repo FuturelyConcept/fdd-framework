@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Bean;
 import java.util.function.Function;
 import java.util.Map;
 
+import com.fdd.core.monitoring.*;
+
 /**
  * Fixed auto-configuration - removes FunctionDiscoveryController to avoid dependency issues
  */
@@ -40,13 +42,58 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         return new ServerlessConfigLoader();
     }
 
+    /**
+     * Create MetricsCollector bean for monitoring
+     */
+    @Bean
+    public MetricsCollector metricsCollector() {
+        logger.debug("Creating MetricsCollector bean");
+        return new MetricsCollector();
+    }
+
+    /**
+     * Create FunctionDiscoveryController bean - uses field injection
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FunctionDiscoveryController functionDiscoveryController() {
+        logger.debug("Creating FunctionDiscoveryController bean");
+        return new FunctionDiscoveryController();
+    }
+
+    /**
+     * Create FunctionMetricsController bean - uses field injection
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FunctionMetricsController functionMetricsController() {
+        logger.debug("Creating FunctionMetricsController bean");
+        return new FunctionMetricsController();
+    }
+
+    /**
+     * Create FunctionMonitoringInterceptor - uses field injection
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FunctionMonitoringInterceptor functionMonitoringInterceptor() {
+        logger.debug("Creating FunctionMonitoringInterceptor bean");
+        return new FunctionMonitoringInterceptor();
+    }
+
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         ApplicationContext applicationContext = event.getApplicationContext();
 
         try {
+            // Get beans - they should exist by now
             FunctionRegistry functionRegistry = applicationContext.getBean(FunctionRegistry.class);
             ServerlessConfigLoader configLoader = applicationContext.getBean(ServerlessConfigLoader.class);
+
+            if (functionRegistry == null || configLoader == null) {
+                logger.warn("FDD Framework dependencies not available, skipping initialization");
+                return;
+            }
 
             logger.info("FDD Framework starting up - scanning for functions...");
 
