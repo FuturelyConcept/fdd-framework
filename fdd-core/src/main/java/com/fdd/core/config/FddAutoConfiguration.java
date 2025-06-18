@@ -3,7 +3,6 @@ package com.fdd.core.config;
 import com.fdd.core.registry.FunctionRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -15,7 +14,7 @@ import java.util.function.Function;
 import java.util.Map;
 
 /**
- * Auto-configuration for FDD framework
+ * Fixed auto-configuration - removes FunctionDiscoveryController to avoid dependency issues
  */
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "fdd.function", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -23,21 +22,12 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
     private static final Logger logger = LoggerFactory.getLogger(FddAutoConfiguration.class);
 
-    @Autowired(required = false)
-    private ApplicationContext applicationContext;
-
-    @Autowired(required = false)
-    private FunctionRegistry functionRegistry;
-
-    @Autowired(required = false)
-    private ServerlessConfigLoader configLoader;
-
     /**
-     * Create FunctionRegistry bean
+     * Create FunctionRegistry bean - this is the core of FDD
      */
     @Bean
     public FunctionRegistry functionRegistry() {
-        logger.debug("Creating FunctionRegistry bean");
+        logger.info("Creating FunctionRegistry bean");
         return new FunctionRegistry();
     }
 
@@ -50,26 +40,16 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         return new ServerlessConfigLoader();
     }
 
-    /**
-     * Create FunctionDiscoveryController bean if discovery is enabled
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FunctionDiscoveryController functionDiscoveryController(FunctionRegistry functionRegistry) {
-        logger.debug("Creating FunctionDiscoveryController bean");
-        return new FunctionDiscoveryController(functionRegistry);
-    }
-
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        if (applicationContext == null || functionRegistry == null || configLoader == null) {
-            logger.warn("FDD Framework dependencies not available, skipping initialization");
-            return;
-        }
-
-        logger.info("FDD Framework starting up - scanning for functions...");
+        ApplicationContext applicationContext = event.getApplicationContext();
 
         try {
+            FunctionRegistry functionRegistry = applicationContext.getBean(FunctionRegistry.class);
+            ServerlessConfigLoader configLoader = applicationContext.getBean(ServerlessConfigLoader.class);
+
+            logger.info("FDD Framework starting up - scanning for functions...");
+
             // Load serverless.yml configuration
             ServerlessConfig config = configLoader.loadConfig();
             Map<String, com.fdd.core.registry.FunctionMetadata> metadataMap = configLoader.createMetadataMap(config);
