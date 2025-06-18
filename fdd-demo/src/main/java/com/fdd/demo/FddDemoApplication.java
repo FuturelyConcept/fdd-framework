@@ -1,4 +1,4 @@
-﻿package com.fdd.demo;
+package com.fdd.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

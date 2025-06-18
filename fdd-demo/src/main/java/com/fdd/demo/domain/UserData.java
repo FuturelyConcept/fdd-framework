@@ -1,4 +1,4 @@
-﻿package com.fdd.demo.domain;
+package com.fdd.demo.domain;
 
 /**
  * User data POJO for validation

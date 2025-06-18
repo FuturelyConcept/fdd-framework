@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Integration test for FDD Demo Application
  */
-@SpringBootTest
+@SpringBootTest(classes = FddDemoApplication.class)
 @TestPropertySource(properties = {
         "fdd.function.enabled=true",
         "fdd.function.discovery.enabled=true"

@@ -1,4 +1,4 @@
-﻿package com.fdd.demo.functions;
+package com.fdd.demo.functions;
 
 import com.fdd.demo.domain.UserData;
 import com.fdd.demo.domain.ValidationResult;

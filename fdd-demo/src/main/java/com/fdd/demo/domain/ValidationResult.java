@@ -1,4 +1,4 @@
-﻿package com.fdd.demo.domain;
+package com.fdd.demo.domain;
 
 /**
  * Result of user validation

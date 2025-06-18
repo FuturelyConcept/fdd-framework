@@ -13,7 +13,7 @@
 
     <artifactId>fdd-core</artifactId>
     <packaging>jar</packaging>
-    <n>FDD Core</n>
+    <name>FDD Core</name>
     <description>Core registry, AOP, security, and proxy generation</description>
 
     <dependencies>
