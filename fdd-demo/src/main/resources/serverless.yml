@@ -66,8 +66,3 @@
   discovery:
     enabled: true
     endpoint: "/functions"
-
-  monitoring:
-    enabled: true
-    metrics-endpoint: "/metrics"
-    detailed-logging: true

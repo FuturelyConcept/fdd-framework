@@ -1,6 +1,7 @@
 package com.fdd.core.config;
 
 import com.fdd.core.registry.FunctionRegistry;
+import com.fdd.core.monitoring.FunctionMonitoringInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -9,16 +10,16 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import java.util.function.Function;
 import java.util.Map;
 
-import com.fdd.core.monitoring.*;
-
 /**
- * Fixed auto-configuration - removes FunctionDiscoveryController to avoid dependency issues
+ * Simplified auto-configuration focusing on core FDD functionality
  */
 @AutoConfiguration
+@EnableAspectJAutoProxy
 @ConditionalOnProperty(prefix = "fdd.function", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FddAutoConfiguration implements ApplicationListener<ApplicationReadyEvent> {
 
@@ -43,16 +44,7 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
     }
 
     /**
-     * Create MetricsCollector bean for monitoring
-     */
-    @Bean
-    public MetricsCollector metricsCollector() {
-        logger.debug("Creating MetricsCollector bean");
-        return new MetricsCollector();
-    }
-
-    /**
-     * Create FunctionDiscoveryController bean - uses field injection
+     * Create FunctionDiscoveryController bean for function introspection
      */
     @Bean
     @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -62,20 +54,10 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
     }
 
     /**
-     * Create FunctionMetricsController bean - uses field injection
+     * Create FunctionMonitoringInterceptor for logging (optional)
      */
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FunctionMetricsController functionMetricsController() {
-        logger.debug("Creating FunctionMetricsController bean");
-        return new FunctionMetricsController();
-    }
-
-    /**
-     * Create FunctionMonitoringInterceptor - uses field injection
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = false)
     public FunctionMonitoringInterceptor functionMonitoringInterceptor() {
         logger.debug("Creating FunctionMonitoringInterceptor bean");
         return new FunctionMonitoringInterceptor();

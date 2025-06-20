@@ -7,9 +7,14 @@ fdd:
     enabled: true
     discovery:
       enabled: true
+    monitoring:
+      enabled: true  # Enable function call logging
 
 logging:
   level:
     com.fdd: DEBUG
     org.springframework: WARN
     org.springframework.boot: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{trace.id}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{trace.id}] %logger{36} - %msg%n"

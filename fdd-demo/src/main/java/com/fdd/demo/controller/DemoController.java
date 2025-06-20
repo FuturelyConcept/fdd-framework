@@ -76,8 +76,7 @@ public class DemoController {
                 "- POST /demo/check-inventory\n" +
                 "- POST /demo/process-payment\n" +
                 "- POST /demo/create-order\n" +
-                "- GET /functions (function discovery)\n" +
-                "- GET /metrics (function metrics)";
+                "- GET /functions (function discovery)\n";
     }
 
     /**
@@ -169,23 +168,6 @@ public class DemoController {
                 "product-123",
                 50,
                 "CARD"
-        );
-
-        // Additional test data
-        public PaymentRequest bankTransferPayment = new PaymentRequest(
-                "john-doe",
-                new BigDecimal("1000.00"),
-                "USD",
-                "BANK_TRANSFER",
-                "order-124"
-        );
-
-        public PaymentRequest excessivePayment = new PaymentRequest(
-                "john-doe",
-                new BigDecimal("15000.00"),
-                "USD",
-                "CARD",
-                "order-125"
         );
     }
 }

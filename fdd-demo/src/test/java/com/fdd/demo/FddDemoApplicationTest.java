@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
         "fdd.function.enabled=true",
         "fdd.function.discovery.enabled=true",
+        "fdd.function.monitoring.enabled=false", // Disable monitoring for tests
         "logging.level.com.fdd=DEBUG"
 })
 class FddDemoApplicationTest {
@@ -36,6 +37,10 @@ class FddDemoApplicationTest {
     private Function<InventoryCheckRequest, InventoryResult> inventoryChecker;
 
     @Autowired
+    @Qualifier("paymentProcessor")
+    private Function<PaymentRequest, PaymentResult> paymentProcessor;
+
+    @Autowired
     private OrderProcessor orderProcessor;
 
     @Test
@@ -43,6 +48,7 @@ class FddDemoApplicationTest {
         assertThat(functionRegistry).isNotNull();
         assertThat(userValidator).isNotNull();
         assertThat(inventoryChecker).isNotNull();
+        assertThat(paymentProcessor).isNotNull();
         assertThat(orderProcessor).isNotNull();
     }
 
@@ -50,7 +56,8 @@ class FddDemoApplicationTest {
     void functionRegistryContainsAllFunctions() {
         assertThat(functionRegistry.isRegistered("userValidator")).isTrue();
         assertThat(functionRegistry.isRegistered("inventoryChecker")).isTrue();
-        assertThat(functionRegistry.size()).isGreaterThanOrEqualTo(2);
+        assertThat(functionRegistry.isRegistered("paymentProcessor")).isTrue();
+        assertThat(functionRegistry.size()).isGreaterThanOrEqualTo(3);
     }
 
     @Test
@@ -90,6 +97,22 @@ class FddDemoApplicationTest {
 
         assertThat(result.isAvailable()).isFalse();
         assertThat(result.getMessage()).contains("Insufficient inventory");
+    }
+
+    @Test
+    void paymentProcessorWorks() {
+        // Test successful payment
+        PaymentRequest request = new PaymentRequest(
+                "john-doe",
+                new java.math.BigDecimal("100.00"),
+                "USD",
+                "CARD",
+                "order-123"
+        );
+        PaymentResult result = paymentProcessor.apply(request);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getTransactionId()).isNotNull();
     }
 
     @Test
