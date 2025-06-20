@@ -1,2 +1,3 @@
+# FDD Framework Auto-Configuration
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 com.fdd.core.config.FddAutoConfiguration

@@ -17,22 +17,10 @@
     <description>Complete e-commerce demo application</description>
 
     <dependencies>
-        <!-- FDD Starter - brings in everything we need -->
+        <!-- FDD Starter - THIS IS THE KEY DEPENDENCY -->
         <dependency>
             <groupId>com.fdd</groupId>
             <artifactId>fdd-starter</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Starter for basic Spring Boot functionality -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Web for REST controllers -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- Spring Boot Actuator for monitoring -->

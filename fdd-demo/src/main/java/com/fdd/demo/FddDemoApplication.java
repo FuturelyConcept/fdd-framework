@@ -1,15 +1,18 @@
 package com.fdd.demo;
 
-import com.fdd.core.config.FddAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ComponentScan;
 
 /**
- * FDD Demo Application with manual configuration import
+ * FDD Demo Application with explicit component scan
+ * This should force Spring to find FDD components
  */
-@SpringBootApplication(scanBasePackages = {"com.fdd.demo", "com.fdd.core"})
-@Import(FddAutoConfiguration.class)
+@SpringBootApplication
+@ComponentScan(basePackages = {
+        "com.fdd.demo",     // Demo application
+        "com.fdd.core"      // FDD Framework core
+})
 public class FddDemoApplication {
     public static void main(String[] args) {
         SpringApplication.run(FddDemoApplication.class, args);

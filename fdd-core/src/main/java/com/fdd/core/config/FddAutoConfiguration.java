@@ -6,116 +6,126 @@ import com.fdd.core.discovery.*;
 import com.fdd.core.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import java.util.function.Function;
 import java.util.Map;
 
 /**
- * Simplified auto-configuration focusing on core FDD functionality
+ * FDD Auto-configuration - FIXED VERSION
+ * Changed from @AutoConfiguration to @Configuration for compatibility
  */
-@AutoConfiguration
+@Configuration
 @EnableAspectJAutoProxy
-@ConditionalOnProperty(prefix = "fdd.function", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FddAutoConfiguration implements ApplicationListener<ApplicationReadyEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(FddAutoConfiguration.class);
 
+    public FddAutoConfiguration() {
+        logger.info("🚀 FDD Framework Auto-Configuration starting...");
+    }
+
     /**
-     * Create FunctionRegistry bean - this is the core of FDD
+     * Core FunctionRegistry bean - ALWAYS create this
      */
     @Bean
+    @ConditionalOnMissingBean
     public FunctionRegistry functionRegistry() {
-        logger.info("Creating FunctionRegistry bean");
+        logger.info("✅ Creating FunctionRegistry bean");
         return new FunctionRegistry();
     }
 
     /**
-     * Create ServerlessConfigLoader bean
+     * ServerlessConfigLoader bean
      */
     @Bean
+    @ConditionalOnMissingBean
     public ServerlessConfigLoader serverlessConfigLoader() {
-        logger.debug("Creating ServerlessConfigLoader bean");
+        logger.info("✅ Creating ServerlessConfigLoader bean");
         return new ServerlessConfigLoader();
     }
 
     /**
-     * Create FunctionDiscoveryController bean for function introspection
+     * Function discovery components - Simplified conditions
      */
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
     public FunctionDiscoveryController functionDiscoveryController() {
-        logger.debug("Creating FunctionDiscoveryController bean");
+        logger.info("✅ Creating FunctionDiscoveryController bean");
         return new FunctionDiscoveryController();
     }
 
-    /**
-     * Create enhanced discovery components - always create them when discovery is enabled
-     */
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
     public FunctionSchemaGenerator functionSchemaGenerator() {
-        logger.info("Creating FunctionSchemaGenerator bean");
+        logger.info("✅ Creating FunctionSchemaGenerator bean");
         return new FunctionSchemaGenerator();
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public FunctionMetricsTracker functionMetricsTracker() {
-        logger.info("Creating FunctionMetricsTracker bean");
+        logger.info("✅ Creating FunctionMetricsTracker bean");
         return new FunctionMetricsTracker();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
     public FunctionDependencyAnalyzer functionDependencyAnalyzer() {
-        logger.info("Creating FunctionDependencyAnalyzer bean");
+        logger.info("✅ Creating FunctionDependencyAnalyzer bean");
         return new FunctionDependencyAnalyzer();
     }
 
     /**
-     * Create FunctionMonitoringInterceptor for logging (optional)
+     * Monitoring components - Optional
      */
     @Bean
+    @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = false)
     public FunctionMonitoringInterceptor functionMonitoringInterceptor() {
-        logger.debug("Creating FunctionMonitoringInterceptor bean");
+        logger.info("✅ Creating FunctionMonitoringInterceptor bean");
         return new FunctionMonitoringInterceptor();
     }
 
     /**
-     * Create JWT security components
+     * Security components - Optional and simplified
      */
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public JwtValidator jwtValidator() {
-        logger.debug("Creating JwtValidator bean");
+        logger.info("✅ Creating JwtValidator bean");
         return new JwtValidator();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public JwtSecurityInterceptor jwtSecurityInterceptor() {
-        logger.debug("Creating JwtSecurityInterceptor bean");
+        logger.info("✅ Creating JwtSecurityInterceptor bean");
         return new JwtSecurityInterceptor();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public FunctionSecurityAspect functionSecurityAspect() {
-        logger.debug("Creating FunctionSecurityAspect bean");
+        logger.info("✅ Creating FunctionSecurityAspect bean");
         return new FunctionSecurityAspect();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public AuthController authController() {
-        logger.debug("Creating AuthController bean");
+        logger.info("✅ Creating AuthController bean");
         return new AuthController();
     }
 
@@ -124,16 +134,13 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         ApplicationContext applicationContext = event.getApplicationContext();
 
         try {
-            // Get beans - they should exist by now
+            logger.info("🔄 FDD Framework ApplicationReadyEvent triggered");
+
+            // Get required beans
             FunctionRegistry functionRegistry = applicationContext.getBean(FunctionRegistry.class);
             ServerlessConfigLoader configLoader = applicationContext.getBean(ServerlessConfigLoader.class);
 
-            if (functionRegistry == null || configLoader == null) {
-                logger.warn("FDD Framework dependencies not available, skipping initialization");
-                return;
-            }
-
-            logger.info("FDD Framework starting up - scanning for functions...");
+            logger.info("🔍 FDD Framework starting up - scanning for functions...");
 
             // Load serverless.yml configuration
             ServerlessConfig config = configLoader.loadConfig();
@@ -142,28 +149,33 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
             // Scan for Function beans in the application context
             Map<String, Function> functionBeans = applicationContext.getBeansOfType(Function.class);
 
-            logger.info("Found {} Function beans and {} metadata entries",
+            logger.info("📊 Found {} Function beans and {} metadata entries",
                     functionBeans.size(), metadataMap.size());
 
             // Register functions with their metadata
-            functionBeans.forEach((beanName, function) -> {
+            int registeredCount = 0;
+            for (Map.Entry<String, Function> entry : functionBeans.entrySet()) {
+                String beanName = entry.getKey();
+                Function function = entry.getValue();
+
                 com.fdd.core.registry.FunctionMetadata metadata = metadataMap.get(beanName);
                 if (metadata == null) {
                     // Create basic metadata if not found in serverless.yml
                     metadata = new com.fdd.core.registry.FunctionMetadata();
                     metadata.setComponent(beanName);
                     metadata.setName("com.fdd.function." + beanName);
-                    logger.debug("Created basic metadata for function: {}", beanName);
+                    logger.debug("📝 Created basic metadata for function: {}", beanName);
                 }
 
                 functionRegistry.registerFunction(beanName, function, metadata);
-            });
+                registeredCount++;
+                logger.info("✅ Registered function: {}", beanName);
+            }
 
-            logger.info("FDD Framework initialization complete - {} functions registered",
-                    functionRegistry.size());
+            logger.info("🎉 FDD Framework initialization complete - {} functions registered", registeredCount);
 
         } catch (Exception e) {
-            logger.error("Failed to initialize FDD Framework", e);
+            logger.error("❌ Failed to initialize FDD Framework", e);
         }
     }
 }

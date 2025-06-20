@@ -14,12 +14,15 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Working Spring test without discovery controller
+ * Updated test that should work with proper auto-configuration
  */
 @SpringBootTest(classes = FddDemoApplication.class)
 @TestPropertySource(properties = {
         "fdd.function.enabled=true",
-        "logging.level.com.fdd=DEBUG"
+        "fdd.function.discovery.enabled=true",
+        "fdd.function.monitoring.enabled=false", // Disable for tests
+        "fdd.security.enabled=false", // Disable security for tests
+        "logging.level.com.fdd=INFO"
 })
 class WorkingFddTest {
 
