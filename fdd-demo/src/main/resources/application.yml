@@ -9,6 +9,8 @@ fdd:
       enabled: true
     monitoring:
       enabled: true  # Enable function call logging
+  security:
+    enabled: true    # Enable JWT security
 
 logging:
   level:

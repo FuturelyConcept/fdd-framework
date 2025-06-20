@@ -2,6 +2,7 @@ package com.fdd.core.config;
 
 import com.fdd.core.registry.FunctionRegistry;
 import com.fdd.core.monitoring.FunctionMonitoringInterceptor;
+import com.fdd.core.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -61,6 +62,37 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
     public FunctionMonitoringInterceptor functionMonitoringInterceptor() {
         logger.debug("Creating FunctionMonitoringInterceptor bean");
         return new FunctionMonitoringInterceptor();
+    }
+
+    /**
+     * Create JWT security components
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public JwtValidator jwtValidator() {
+        logger.debug("Creating JwtValidator bean");
+        return new JwtValidator();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public JwtSecurityInterceptor jwtSecurityInterceptor() {
+        logger.debug("Creating JwtSecurityInterceptor bean");
+        return new JwtSecurityInterceptor();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FunctionSecurityAspect functionSecurityAspect() {
+        logger.debug("Creating FunctionSecurityAspect bean");
+        return new FunctionSecurityAspect();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public AuthController authController() {
+        logger.debug("Creating AuthController bean");
+        return new AuthController();
     }
 
     @Override

@@ -31,6 +31,7 @@
         <!-- Utilities -->
         <jackson.version>2.15.2</jackson.version>
         <slf4j.version>2.0.9</slf4j.version>
+        <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
 
         <!-- Maven plugins -->
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
@@ -74,6 +75,14 @@
                 <groupId>com.fdd</groupId>
                 <artifactId>fdd-starter</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <!-- Jakarta Servlet API -->
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${jakarta.servlet.version}</version>
+                <scope>provided</scope>
             </dependency>
 
             <!-- Jackson YAML -->
