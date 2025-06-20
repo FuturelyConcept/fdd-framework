@@ -17,6 +17,7 @@ logging:
     com.fdd: DEBUG
     org.springframework: WARN
     org.springframework.boot: INFO
+    org.springframework.web: DEBUG  # Add web debugging
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{trace.id}] %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{trace.id}] %logger{36} - %msg%n"

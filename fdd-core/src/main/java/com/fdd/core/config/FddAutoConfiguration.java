@@ -2,6 +2,7 @@ package com.fdd.core.config;
 
 import com.fdd.core.registry.FunctionRegistry;
 import com.fdd.core.monitoring.FunctionMonitoringInterceptor;
+import com.fdd.core.discovery.*;
 import com.fdd.core.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,29 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
     public FunctionDiscoveryController functionDiscoveryController() {
         logger.debug("Creating FunctionDiscoveryController bean");
         return new FunctionDiscoveryController();
+    }
+
+    /**
+     * Create enhanced discovery components - always create them when discovery is enabled
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FunctionSchemaGenerator functionSchemaGenerator() {
+        logger.info("Creating FunctionSchemaGenerator bean");
+        return new FunctionSchemaGenerator();
+    }
+
+    @Bean
+    public FunctionMetricsTracker functionMetricsTracker() {
+        logger.info("Creating FunctionMetricsTracker bean");
+        return new FunctionMetricsTracker();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FunctionDependencyAnalyzer functionDependencyAnalyzer() {
+        logger.info("Creating FunctionDependencyAnalyzer bean");
+        return new FunctionDependencyAnalyzer();
     }
 
     /**
