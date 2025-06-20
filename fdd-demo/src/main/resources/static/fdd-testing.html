@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FDD Function Testing Interface</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #667eea;
+        }
+
+        .function-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .function-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            background: #f8f9fa;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .function-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .function-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .function-types {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .test-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .token-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .token-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .token-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .token-copy {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🧪 FDD Function Testing Interface</h1>
+        <p>Test your functions with rich schemas, examples, and JWT tokens</p>
+    </div>
+
+    <!-- JWT Token Section -->
+    <div class="token-section">
+        <h3>🔐 Authentication Tokens</h3>
+        <p>Copy these tokens to test functions with different security levels:</p>
+        <div class="token-grid">
+            <div class="token-card">
+                <strong>Admin Token</strong>
+                <p>Full access to all functions</p>
+                <input type="text" id="adminToken" readonly style="width: 100%; font-size: 0.8em; padding: 5px;">
+                <button class="token-copy" onclick="copyToken('adminToken')">Copy Token</button>
+            </div>
+            <div class="token-card">
+                <strong>User Token</strong>
+                <p>Limited to user operations</p>
+                <input type="text" id="userToken" readonly style="width: 100%; font-size: 0.8em; padding: 5px;">
+                <button class="token-copy" onclick="copyToken('userToken')">Copy Token</button>
+            </div>
+            <div class="token-card">
+                <strong>Payment Token</strong>
+                <p>Financial operations access</p>
+                <input type="text" id="paymentToken" readonly style="width: 100%; font-size: 0.8em; padding: 5px;">
+                <button class="token-copy" onclick="copyToken('paymentToken')">Copy Token</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Function Testing Grid -->
+    <div id="functionsGrid" class="function-grid">
+        <!-- Functions will be loaded here -->
+    </div>
+</div>
+
+<script>
+    let testTokens = {};
+
+    // Load functions and test tokens on page load
+    async function init() {
+        await loadTestTokens();
+        await loadFunctions();
+    }
+
+    // Load test tokens
+    async function loadTestTokens() {
+        try {
+            const response = await fetch('/auth/test-tokens');
+            testTokens = await response.json();
+
+            // Populate token inputs
+            document.getElementById('adminToken').value = 'Bearer ' + testTokens.admin.token;
+            document.getElementById('userToken').value = 'Bearer ' + testTokens.user.token;
+            document.getElementById('paymentToken').value = 'Bearer ' + testTokens.payment.token;
+        } catch (error) {
+            console.error('Failed to load test tokens:', error);
+        }
+    }
+
+    // Load and display functions
+    async function loadFunctions() {
+        try {
+            const response = await fetch('/functions');
+            const data = await response.json();
+            displayFunctions(data.functions);
+        } catch (error) {
+            console.error('Failed to load functions:', error);
+        }
+    }
+
+    // Display functions in the grid
+    function displayFunctions(functions) {
+        const grid = document.getElementById('functionsGrid');
+        grid.innerHTML = '';
+
+        functions.forEach(func => {
+            const card = createFunctionCard(func);
+            grid.appendChild(card);
+        });
+    }
+
+    // Create a function test card
+    function createFunctionCard(func) {
+        const card = document.createElement('div');
+        card.className = 'function-card';
+
+        card.innerHTML = `
+            <div class="function-name">${func.component}</div>
+            <div class="function-types">
+                Input: ${func.inputType || 'Any'}<br>
+                Output: ${func.outputType || 'Any'}
+            </div>
+
+            <div class="test-section">
+                <h4>Test Input (JSON):</h4>
+                <textarea id="input-${func.component}" placeholder='{"example": "data"}'></textarea>
+
+                <h4>Authorization Token:</h4>
+                <select id="token-${func.component}" style="width: 100%; padding: 8px; margin-bottom: 15px;">
+                    <option value="">No Authentication</option>
+                    <option value="admin">Admin Token</option>
+                    <option value="user">User Token</option>
+                    <option value="payment">Payment Token</option>
+                </select>
+
+                <button class="btn" onclick="testFunction('${func.component}')">
+                    🧪 Test Function
+                </button>
+
+                <div id="result-${func.component}" class="result" style="display: none;"></div>
+            </div>
+        `;
+
+        // Load example data if available
+        loadFunctionExample(func.component);
+
+        return card;
+    }
+
+    // Load example data for a function
+    async function loadFunctionExample(functionName) {
+        try {
+            const response = await fetch(`/functions/${functionName}/schema`);
+            const schema = await response.json();
+
+            if (schema.inputExample) {
+                const textarea = document.getElementById(`input-${functionName}`);
+                textarea.value = JSON.stringify(schema.inputExample, null, 2);
+            }
+        } catch (error) {
+            console.log(`No schema available for ${functionName}`);
+        }
+    }
+
+    // Test a function
+    async function testFunction(functionName) {
+        const inputTextarea = document.getElementById(`input-${functionName}`);
+        const tokenSelect = document.getElementById(`token-${functionName}`);
+        const resultDiv = document.getElementById(`result-${functionName}`);
+
+        let input;
+        try {
+            input = JSON.parse(inputTextarea.value || '{}');
+        } catch (error) {
+            showResult(resultDiv, 'Invalid JSON input', false);
+            return;
+        }
+
+        // Prepare headers
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        // Add authorization if selected
+        const tokenType = tokenSelect.value;
+        if (tokenType && testTokens[tokenType]) {
+            headers['Authorization'] = 'Bearer ' + testTokens[tokenType].token;
+        }
+
+        try {
+            const response = await fetch(`/demo/check-inventory`, ${functionName}`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(input)
+            });
+
+            const result = await response.json();
+            showResult(resultDiv, JSON.stringify(result, null, 2), response.ok);
+
+        } catch (error) {
+            showResult(resultDiv, 'Network error: ' + error.message, false);
+        }
+    }
+
+    // Show test result
+    function showResult(resultDiv, content, isSuccess) {
+        resultDiv.style.display = 'block';
+        resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+        resultDiv.textContent = content;
+    }
+
+    // Copy token to clipboard
+    function copyToken(tokenId) {
+        const tokenInput = document.getElementById(tokenId);
+        tokenInput.select();
+        document.execCommand('copy');
+
+        // Show feedback
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+            button.textContent = originalText;
+        }, 1500);
+    }
+
+    // Initialize the interface
+    init();
+</script>
+</body>
+</html>
