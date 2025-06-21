@@ -1,0 +1,40 @@
+package com.fdd.inventoryservice;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fdd.demo.domain.InventoryCheckRequest;
+import com.fdd.demo.domain.InventoryResult;
+import com.fdd.demo.functions.InventoryCheckFunction;
+
+import java.util.Map;
+
+/**
+ * Dedicated Lambda for Inventory Checking
+ * Pure FDD Function<InventoryCheckRequest, InventoryResult> as microservice
+ */
+public class InventoryServiceHandler implements RequestHandler<Map<String, Object>, InventoryResult> {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final InventoryCheckFunction inventoryChecker = new InventoryCheckFunction();
+
+    @Override
+    public InventoryResult handleRequest(Map<String, Object> input, Context context) {
+        try {
+            context.getLogger().log("Inventory Service - Processing: " + input);
+
+            // Convert to typed input
+            InventoryCheckRequest request = objectMapper.convertValue(input, InventoryCheckRequest.class);
+
+            // Call FDD function
+            InventoryResult result = inventoryChecker.apply(request);
+
+            context.getLogger().log("Inventory Service - Available: " + result.isAvailable());
+            return result;
+
+        } catch (Exception e) {
+            context.getLogger().log("Inventory Service - Error: " + e.getMessage());
+            return InventoryResult.unavailable("Inventory service error: " + e.getMessage());
+        }
+    }
+}

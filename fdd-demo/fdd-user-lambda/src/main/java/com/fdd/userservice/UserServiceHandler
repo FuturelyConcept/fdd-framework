@@ -1,0 +1,40 @@
+package com.fdd.userservice;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fdd.demo.domain.UserData;
+import com.fdd.demo.domain.ValidationResult;
+import com.fdd.demo.functions.UserValidationFunction;
+
+import java.util.Map;
+
+/**
+ * Dedicated Lambda for User Validation
+ * Pure FDD Function<UserData, ValidationResult> as microservice
+ */
+public class UserServiceHandler implements RequestHandler<Map<String, Object>, ValidationResult> {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final UserValidationFunction userValidator = new UserValidationFunction();
+
+    @Override
+    public ValidationResult handleRequest(Map<String, Object> input, Context context) {
+        try {
+            context.getLogger().log("User Service - Processing: " + input);
+
+            // Convert to typed input
+            UserData userData = objectMapper.convertValue(input, UserData.class);
+
+            // Call FDD function
+            ValidationResult result = userValidator.apply(userData);
+
+            context.getLogger().log("User Service - Result: " + result.isValid());
+            return result;
+
+        } catch (Exception e) {
+            context.getLogger().log("User Service - Error: " + e.getMessage());
+            return ValidationResult.invalid("User service error: " + e.getMessage());
+        }
+    }
+}
