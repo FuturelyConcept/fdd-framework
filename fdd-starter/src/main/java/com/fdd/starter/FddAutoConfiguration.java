@@ -12,19 +12,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import java.util.function.Function;
 import java.util.Map;
 
 /**
- * FDD Auto-configuration - FIXED VERSION
- * Changed from @AutoConfiguration to @Configuration for compatibility
+ * FDD Framework Auto-Configuration
+ * Core framework configuration - no application-specific settings
  */
 @AutoConfiguration
 @EnableAspectJAutoProxy
@@ -36,9 +36,10 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         logger.info("🚀 FDD Framework Auto-Configuration starting...");
     }
 
-    /**
-     * Core FunctionRegistry bean - ALWAYS create this
-     */
+    // =====================================================
+    // CORE FRAMEWORK BEANS - Always Available
+    // =====================================================
+
     @Bean
     @ConditionalOnMissingBean
     public FunctionRegistry functionRegistry() {
@@ -46,9 +47,6 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         return new FunctionRegistry();
     }
 
-    /**
-     * ServerlessConfigLoader bean
-     */
     @Bean
     @ConditionalOnMissingBean
     public ServerlessConfigLoader serverlessConfigLoader() {
@@ -56,11 +54,13 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         return new ServerlessConfigLoader();
     }
 
-    /**
-     * Function discovery components - Simplified conditions
-     */
+    // =====================================================
+    // DISCOVERY & MONITORING BEANS
+    // =====================================================
+
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
     public FunctionDiscoveryController functionDiscoveryController() {
         logger.info("✅ Creating FunctionDiscoveryController bean");
         return new FunctionDiscoveryController();
@@ -68,6 +68,7 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
     public FunctionSchemaGenerator functionSchemaGenerator() {
         logger.info("✅ Creating FunctionSchemaGenerator bean");
         return new FunctionSchemaGenerator();
@@ -75,6 +76,7 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = true)
     public FunctionMetricsTracker functionMetricsTracker() {
         logger.info("✅ Creating FunctionMetricsTracker bean");
         return new FunctionMetricsTracker();
@@ -82,14 +84,12 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = true)
     public FunctionDependencyAnalyzer functionDependencyAnalyzer() {
         logger.info("✅ Creating FunctionDependencyAnalyzer bean");
         return new FunctionDependencyAnalyzer();
     }
 
-    /**
-     * Monitoring components - Optional
-     */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = false)
@@ -98,11 +98,13 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         return new FunctionMonitoringInterceptor();
     }
 
-    /**
-     * Security components - Optional and simplified
-     */
+    // =====================================================
+    // SECURITY FRAMEWORK BEANS - Only when Spring Security is available
+    // =====================================================
+
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
     @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public JwtValidator jwtValidator() {
         logger.info("✅ Creating JwtValidator bean");
@@ -111,6 +113,7 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
     @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public JwtSecurityInterceptor jwtSecurityInterceptor() {
         logger.info("✅ Creating JwtSecurityInterceptor bean");
@@ -119,6 +122,7 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
     @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public FunctionSecurityAspect functionSecurityAspect() {
         logger.info("✅ Creating FunctionSecurityAspect bean");
@@ -127,11 +131,16 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
     @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
     public AuthController authController() {
         logger.info("✅ Creating AuthController bean");
         return new AuthController();
     }
+
+    // =====================================================
+    // FUNCTION REGISTRATION - Application Ready Event
+    // =====================================================
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -140,11 +149,10 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
         try {
             logger.info("🔄 FDD Framework ApplicationReadyEvent triggered");
 
-            // Get required beans
             FunctionRegistry functionRegistry = applicationContext.getBean(FunctionRegistry.class);
             ServerlessConfigLoader configLoader = applicationContext.getBean(ServerlessConfigLoader.class);
 
-            logger.info("🔍 FDD Framework starting up - scanning for functions...");
+            logger.info("🔍 Scanning for Function<T,R> implementations...");
 
             // Load serverless.yml configuration
             ServerlessConfig config = configLoader.loadConfig();
@@ -173,13 +181,35 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
 
                 functionRegistry.registerFunction(beanName, function, metadata);
                 registeredCount++;
-                logger.info("✅ Registered function: {}", beanName);
+                logger.debug("✅ Registered function: {}", beanName);
             }
 
             logger.info("🎉 FDD Framework initialization complete - {} functions registered", registeredCount);
 
+            // Log framework status
+            logFrameworkStatus(applicationContext);
+
         } catch (Exception e) {
             logger.error("❌ Failed to initialize FDD Framework", e);
+        }
+    }
+
+    private void logFrameworkStatus(ApplicationContext applicationContext) {
+        try {
+            boolean discoveryEnabled = applicationContext.getEnvironment()
+                    .getProperty("fdd.function.discovery.enabled", Boolean.class, true);
+            boolean monitoringEnabled = applicationContext.getEnvironment()
+                    .getProperty("fdd.function.monitoring.enabled", Boolean.class, true);
+            boolean securityEnabled = applicationContext.getEnvironment()
+                    .getProperty("fdd.security.enabled", Boolean.class, false);
+
+            logger.info("📈 FDD Framework Status:");
+            logger.info("   📡 Discovery: {}", discoveryEnabled ? "ENABLED" : "DISABLED");
+            logger.info("   📊 Monitoring: {}", monitoringEnabled ? "ENABLED" : "DISABLED");
+            logger.info("   🔒 Security Framework: {}", securityEnabled ? "ENABLED" : "DISABLED");
+
+        } catch (Exception e) {
+            logger.debug("Could not log framework status: {}", e.getMessage());
         }
     }
 }

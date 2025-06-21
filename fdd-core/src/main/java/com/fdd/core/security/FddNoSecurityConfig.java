@@ -1,7 +1,8 @@
 package com.fdd.core.security;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -12,26 +13,23 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * FDD Framework Security Configuration
- * Provides basic security infrastructure for FDD framework endpoints
- * Application-specific security should be configured in the application layer
+ * Configuration when FDD security is disabled
+ * Ensures Spring Security doesn't interfere with the application
  */
 @Configuration
 @EnableWebSecurity
 @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
-@ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
-public class FddSecurityConfig {
+@ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "false", matchIfMissing = true)
+public class FddNoSecurityConfig {
 
     /**
-     * Framework endpoints security filter chain
-     * This ensures FDD framework endpoints are publicly accessible
-     * Order(1) = highest priority
+     * Permissive security filter chain when FDD security is disabled
+     * This prevents Spring Boot's default security from blocking endpoints
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain fddFrameworkFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain noSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/functions/**", "/auth/**") // Only FDD framework endpoints
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().permitAll()
                 )

@@ -1,7 +1,6 @@
-package com.fdd.core.security;
+package com.fdd.demo.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -12,28 +11,28 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * FDD Framework Security Configuration
- * Provides basic security infrastructure for FDD framework endpoints
- * Application-specific security should be configured in the application layer
+ * Demo Application Security Configuration
+ * This configures security specifically for the demo application endpoints
+ * It works alongside the FDD framework security configuration
  */
 @Configuration
 @EnableWebSecurity
-@ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
 @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
-public class FddSecurityConfig {
+public class DemoSecurityConfig {
 
     /**
-     * Framework endpoints security filter chain
-     * This ensures FDD framework endpoints are publicly accessible
-     * Order(1) = highest priority
+     * Demo application security filter chain
+     * Order(2) = lower priority than framework endpoints
      */
     @Bean
-    @Order(1)
-    public SecurityFilterChain fddFrameworkFilterChain(HttpSecurity http) throws Exception {
+    @Order(2)
+    public SecurityFilterChain demoApplicationFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/functions/**", "/auth/**") // Only FDD framework endpoints
+                .securityMatcher("/demo/**", "/fdd-showcase/**") // Only demo endpoints
                 .authorizeHttpRequests(authz -> authz
-                        .anyRequest().permitAll()
+                        .requestMatchers("/demo/test", "/demo/sample-data").permitAll() // Public demo endpoints
+                        .requestMatchers("/fdd-showcase/**").permitAll() // Public showcase endpoints
+                        .anyRequest().authenticated() // All other demo endpoints need auth
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

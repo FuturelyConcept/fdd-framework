@@ -1,30 +1,21 @@
 package com.fdd.core.config;
 
-import com.fdd.core.security.JwtSecurityInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Web configuration to register security interceptor
+ * FDD Framework Web Configuration
+ * This is reserved for framework-level web configuration only
+ * Application-specific web configuration should be in the application layer
  */
 @Configuration
-@ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "fdd.function", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FddWebConfig implements WebMvcConfigurer {
 
-    @Autowired
-    private JwtSecurityInterceptor jwtSecurityInterceptor;
+    // Framework-level web configuration goes here
+    // Currently empty - no framework-level interceptors needed
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(jwtSecurityInterceptor)
-                .addPathPatterns("/demo/**") // Apply security to demo endpoints
-                .excludePathPatterns(
-                        "/demo/test",           // Public test endpoint
-                        "/functions/**",        // Function discovery (public)
-                        "/auth/**"             // Authentication endpoints (public)
-                );
-    }
+    // Note: Application-specific interceptors should be configured
+    // in the application layer, not here
 }
