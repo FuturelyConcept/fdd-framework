@@ -2,7 +2,7 @@ package com.fdd.demo;
 
 import com.fdd.demo.domain.UserData;
 import com.fdd.demo.domain.ValidationResult;
-import com.fdd.core.config.FddAutoConfiguration;
+import com.fdd.starter.FddAutoConfiguration;
 import com.fdd.core.registry.FunctionRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

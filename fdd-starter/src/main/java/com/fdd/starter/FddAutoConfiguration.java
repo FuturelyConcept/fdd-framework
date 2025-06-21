@@ -1,11 +1,15 @@
-package com.fdd.core.config;
+package com.fdd.starter;
 
+import com.fdd.core.config.FunctionDiscoveryController;
+import com.fdd.core.config.ServerlessConfig;
+import com.fdd.core.config.ServerlessConfigLoader;
 import com.fdd.core.registry.FunctionRegistry;
 import com.fdd.core.monitoring.FunctionMonitoringInterceptor;
 import com.fdd.core.discovery.*;
 import com.fdd.core.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -22,7 +26,7 @@ import java.util.Map;
  * FDD Auto-configuration - FIXED VERSION
  * Changed from @AutoConfiguration to @Configuration for compatibility
  */
-@Configuration
+@AutoConfiguration
 @EnableAspectJAutoProxy
 public class FddAutoConfiguration implements ApplicationListener<ApplicationReadyEvent> {
 
