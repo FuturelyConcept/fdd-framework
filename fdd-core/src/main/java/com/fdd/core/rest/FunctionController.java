@@ -1,5 +1,6 @@
 package com.fdd.core.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fdd.core.registry.FunctionRegistry;
 import com.fdd.core.registry.FunctionMetadata;
 import org.slf4j.Logger;
@@ -16,19 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Core FDD Function Controller
- *
- * This is the heart of FDD - it exposes every Function<T,R> component as a REST endpoint.
- *
- * Purpose:
- * - Turn Function<T,R> into REST endpoints: POST /functions/{functionName}
- * - Enable function-to-function calls via REST in serverless environment
- * - Provide function discovery: GET /functions
- *
- * In serverless deployment:
- * - Each function becomes a separate Lambda/Azure Function
- * - This controller handles the REST → Function<T,R> mapping
- * - Functions call each other via HTTP instead of direct injection
+ * Enhanced FDD Function Controller with proper type conversion
  */
 @RestController
 @RequestMapping("/functions")
@@ -39,12 +28,12 @@ public class FunctionController {
     @Autowired
     private FunctionRegistry functionRegistry;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     /**
-     * Execute a function via REST call
+     * Execute a function via REST call with proper type conversion
      * POST /functions/{functionName}
-     *
-     * This is the core FDD functionality:
-     * Function<T,R> + REST = Serverless-ready endpoint
      */
     @PostMapping("/{functionName}")
     @SuppressWarnings("unchecked")
@@ -58,47 +47,83 @@ public class FunctionController {
         try {
             // Get the function from registry
             Optional<Function<Object, Object>> functionOpt = functionRegistry.getFunction(functionName);
-
             if (functionOpt.isEmpty()) {
                 logger.warn("❌ Function not found: {}", functionName);
                 return ResponseEntity.notFound().build();
             }
 
-            Function<Object, Object> function = functionOpt.get();
+            // Get function metadata to determine input type
+            Optional<FunctionMetadata> metadataOpt = functionRegistry.getMetadata(functionName);
+            if (metadataOpt.isEmpty()) {
+                logger.warn("❌ Function metadata not found: {}", functionName);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Function metadata not available", "function", functionName));
+            }
 
-            // Execute the function - this is the magic moment!
-            // Function<T,R>.apply(input) → output
-            Object result = function.apply(input);
+            Function<Object, Object> function = functionOpt.get();
+            FunctionMetadata metadata = metadataOpt.get();
+
+            // Convert input to the correct type if needed
+            Object typedInput = convertInputToCorrectType(input, metadata, functionName);
+
+            // Execute the function with properly typed input
+            Object result = function.apply(typedInput);
 
             logger.debug("✅ Function '{}' executed successfully, result type: {}",
                     functionName, result != null ? result.getClass().getSimpleName() : "null");
 
             return ResponseEntity.ok(result);
 
-        } catch (ClassCastException e) {
-            logger.error("❌ Function '{}' type mismatch: {}", functionName, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(Map.of(
-                            "error", "Type mismatch",
-                            "message", "Input type doesn't match function signature",
-                            "function", functionName
-                    ));
         } catch (Exception e) {
             logger.error("❌ Function '{}' execution failed: {}", functionName, e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(Map.of(
                             "error", "Function execution failed",
                             "message", e.getMessage(),
-                            "function", functionName
+                            "function", functionName,
+                            "details", e.getClass().getSimpleName()
                     ));
+        }
+    }
+
+    /**
+     * Convert generic input object to the function's expected input type
+     */
+    private Object convertInputToCorrectType(Object input, FunctionMetadata metadata, String functionName) {
+        try {
+            // If input is null, return null
+            if (input == null) {
+                return null;
+            }
+
+            // If no input type specified in metadata, return as-is
+            Class<?> inputType = metadata.getInputType();
+            if (inputType == null) {
+                logger.debug("No input type specified for function {}, using input as-is", functionName);
+                return input;
+            }
+
+            // If input is already the correct type, return as-is
+            if (inputType.isAssignableFrom(input.getClass())) {
+                logger.debug("Input already correct type for function {}", functionName);
+                return input;
+            }
+
+            // Convert using Jackson ObjectMapper
+            logger.debug("Converting input from {} to {} for function {}",
+                    input.getClass().getSimpleName(), inputType.getSimpleName(), functionName);
+
+            return objectMapper.convertValue(input, inputType);
+
+        } catch (Exception e) {
+            logger.error("Failed to convert input type for function {}: {}", functionName, e.getMessage());
+            throw new RuntimeException("Input type conversion failed: " + e.getMessage(), e);
         }
     }
 
     /**
      * Get list of available functions
      * GET /functions
-     *
-     * Simple function discovery - shows what Function<T,R> components are available
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> listFunctions() {
@@ -106,7 +131,6 @@ public class FunctionController {
             var functionNames = functionRegistry.getFunctionNames();
             var allMetadata = functionRegistry.getAllMetadata();
 
-            // Create simple function list with metadata
             List<Map<String, Object>> functions = allMetadata.stream()
                     .map(this::createFunctionInfo)
                     .collect(Collectors.toList());
@@ -123,18 +147,13 @@ public class FunctionController {
         } catch (Exception e) {
             logger.error("❌ Failed to list functions: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of(
-                            "error", "Failed to list functions",
-                            "message", e.getMessage()
-                    ));
+                    .body(Map.of("error", "Failed to list functions", "message", e.getMessage()));
         }
     }
 
     /**
      * Get information about a specific function
      * GET /functions/{functionName}
-     *
-     * Returns metadata about the function from serverless.yml
      */
     @GetMapping("/{functionName}")
     public ResponseEntity<Map<String, Object>> getFunctionInfo(@PathVariable String functionName) {
@@ -151,10 +170,7 @@ public class FunctionController {
         } catch (Exception e) {
             logger.error("❌ Failed to get function info for {}: {}", functionName, e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of(
-                            "error", "Failed to get function info",
-                            "message", e.getMessage()
-                    ));
+                    .body(Map.of("error", "Failed to get function info", "message", e.getMessage()));
         }
     }
 
@@ -179,10 +195,7 @@ public class FunctionController {
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of(
-                            "status", "DOWN",
-                            "error", e.getMessage()
-                    ));
+                    .body(Map.of("status", "DOWN", "error", e.getMessage()));
         }
     }
 
@@ -198,9 +211,11 @@ public class FunctionController {
         // Add input/output type info if available
         if (metadata.getInputType() != null) {
             info.put("inputType", metadata.getInputType().getSimpleName());
+            info.put("inputTypeFullName", metadata.getInputType().getName());
         }
         if (metadata.getOutputType() != null) {
             info.put("outputType", metadata.getOutputType().getSimpleName());
+            info.put("outputTypeFullName", metadata.getOutputType().getName());
         }
 
         return info;
