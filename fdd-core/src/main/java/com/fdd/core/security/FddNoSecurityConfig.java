@@ -14,7 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Configuration when FDD security is disabled
- * Ensures Spring Security doesn't interfere with the application
+ * This completely disables security when FDD security is not enabled
  */
 @Configuration
 @EnableWebSecurity
@@ -23,12 +23,11 @@ import org.springframework.security.web.SecurityFilterChain;
 public class FddNoSecurityConfig {
 
     /**
-     * Permissive security filter chain when FDD security is disabled
-     * This prevents Spring Boot's default security from blocking endpoints
+     * Permissive security filter chain - allows all requests
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain noSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain permitAllFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().permitAll()

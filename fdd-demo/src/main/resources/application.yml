@@ -2,19 +2,24 @@
 spring:
   application:
     name: fdd-demo
+  # Exclude BOTH security auto-configurations to prevent conflicts
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
 
 # =====================================================
-# FDD Framework Configuration
+# FDD Framework Configuration - Focused on Core Purpose
 # =====================================================
 fdd:
   function:
     enabled: true
     discovery:
-      enabled: true
+      enabled: false    # Disable - cloud platform handles this
     monitoring:
-      enabled: true  # Enable function call logging and metrics
+      enabled: false    # Disable - cloud platform handles this
   security:
-    enabled: false   # Set to true to enable JWT security for demo endpoints
+    enabled: false      # Disable for demo - will be handled by serverless.yml + cloud platform
 
 # =====================================================
 # Logging Configuration
@@ -23,40 +28,4 @@ logging:
   level:
     com.fdd: INFO
     org.springframework: WARN
-    org.springframework.boot: INFO
-    org.springframework.security: INFO
     root: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{trace.id}] %logger{36} - %msg%n"
-
-# =====================================================
-# Demo-Specific Configuration Profiles
-# =====================================================
----
-# Profile: security-enabled
-spring:
-  config:
-    activate:
-      on-profile: security-enabled
-
-fdd:
-  security:
-    enabled: true
-
-logging:
-  level:
-    com.fdd.core.security: DEBUG
-    org.springframework.security: DEBUG
-
----
-# Profile: debug
-spring:
-  config:
-    activate:
-      on-profile: debug
-
-logging:
-  level:
-    com.fdd: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.web: DEBUG

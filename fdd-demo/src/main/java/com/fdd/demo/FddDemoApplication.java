@@ -2,11 +2,12 @@ package com.fdd.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 
 /**
- * FDD Demo Application with explicit component scan
- * This should force Spring to find FDD components
+ * FDD Demo Application
+ * Excludes Spring Boot's default security auto-configuration to allow FDD framework
+ * to manage security through its own conditional configuration
  */
 @SpringBootApplication
 public class FddDemoApplication {
