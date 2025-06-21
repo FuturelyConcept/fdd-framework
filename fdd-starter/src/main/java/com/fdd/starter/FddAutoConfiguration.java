@@ -1,11 +1,9 @@
 package com.fdd.starter;
 
-import com.fdd.core.config.FunctionDiscoveryController;
+import com.fdd.core.rest.FunctionController;
 import com.fdd.core.config.ServerlessConfig;
 import com.fdd.core.config.ServerlessConfigLoader;
 import com.fdd.core.registry.FunctionRegistry;
-import com.fdd.core.monitoring.FunctionMonitoringInterceptor;
-import com.fdd.core.discovery.*;
 import com.fdd.core.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,81 +59,9 @@ public class FddAutoConfiguration implements ApplicationListener<ApplicationRead
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FunctionDiscoveryController functionDiscoveryController() {
+    public FunctionController functionDiscoveryController() {
         logger.info("✅ Creating FunctionDiscoveryController bean");
-        return new FunctionDiscoveryController();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "fdd.function.discovery", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FunctionSchemaGenerator functionSchemaGenerator() {
-        logger.info("✅ Creating FunctionSchemaGenerator bean");
-        return new FunctionSchemaGenerator();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FunctionMetricsTracker functionMetricsTracker() {
-        logger.info("✅ Creating FunctionMetricsTracker bean");
-        return new FunctionMetricsTracker();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FunctionDependencyAnalyzer functionDependencyAnalyzer() {
-        logger.info("✅ Creating FunctionDependencyAnalyzer bean");
-        return new FunctionDependencyAnalyzer();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "fdd.function.monitoring", name = "enabled", havingValue = "true", matchIfMissing = false)
-    public FunctionMonitoringInterceptor functionMonitoringInterceptor() {
-        logger.info("✅ Creating FunctionMonitoringInterceptor bean");
-        return new FunctionMonitoringInterceptor();
-    }
-
-    // =====================================================
-    // SECURITY FRAMEWORK BEANS - Only when Spring Security is available
-    // =====================================================
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
-    public JwtValidator jwtValidator() {
-        logger.info("✅ Creating JwtValidator bean");
-        return new JwtValidator();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
-    public JwtSecurityInterceptor jwtSecurityInterceptor() {
-        logger.info("✅ Creating JwtSecurityInterceptor bean");
-        return new JwtSecurityInterceptor();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
-    public FunctionSecurityAspect functionSecurityAspect() {
-        logger.info("✅ Creating FunctionSecurityAspect bean");
-        return new FunctionSecurityAspect();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
-    @ConditionalOnProperty(prefix = "fdd.security", name = "enabled", havingValue = "true", matchIfMissing = false)
-    public AuthController authController() {
-        logger.info("✅ Creating AuthController bean");
-        return new AuthController();
+        return new FunctionController();
     }
 
     // =====================================================
