@@ -1,30 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.fdd</groupId>
-        <artifactId>fdd-framework</artifactId>
+        <artifactId>fdd-demo</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>fdd-demo</artifactId>
+    <artifactId>fdd-lambda-functions</artifactId>
+    <packaging>jar</packaging>
     <name>FDD Lambda Functions - Using FDD Framework</name>
-    <packaging>pom</packaging>
+    <description>Lambda functions that actually use the FDD framework</description>
 
-    <modules>
-        <module>fdd-demo-app</module>
-        <module>fdd-lambda-functions</module>
-    </modules>
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <dependencies>
         <!-- FDD AWS Lambda Starter - This is the key! -->
         <dependency>
             <groupId>com.fdd</groupId>
             <artifactId>fdd-aws-lambda-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Demo domain classes -->
+        <dependency>
+            <groupId>com.fdd</groupId>
+            <artifactId>fdd-demo-app</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

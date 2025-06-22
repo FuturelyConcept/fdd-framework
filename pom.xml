@@ -42,6 +42,7 @@
         <module>fdd-core</module>
         <module>fdd-starter</module>
         <module>fdd-demo</module>
+        <module>fdd-aws-lambda-starter</module>
         <!-- <module>fdd-maven-plugin</module> --> <!-- Add later -->
     </modules>
 

@@ -1,0 +1,121 @@
+spring:
+  application:
+    name: fdd-lambda-function
+  main:
+    web-application-type: none  # No web server in Lambda
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+# FDD Configuration for Lambda
+fdd:
+  function:
+    enabled: true
+    discovery:
+      enabled: false    # Not needed in Lambda
+    monitoring:
+      enabled: false    # Lambda handles monitoring
+  security:
+    enabled: false      # Lambda handles security
+
+# Logging
+logging:
+  level:
+    com.fdd: INFO
+    com.fdd.aws.lambda.CrossLambdaFunctionRegistry: DEBUG
+    root: WARN
+
+  // fdd-demo/fdd-lambda-functions/src/main/resources/serverless.yml
+serverless:
+  service: fdd-lambda-demo
+  provider:
+    name: aws
+    runtime: java17
+    region: us-east-1
+
+  functions:
+    userValidator:
+      name: "com.ecommerce.user.validate"
+      component: "userValidator"
+      input: "com.fdd.demo.domain.UserData"
+      output: "com.fdd.demo.domain.ValidationResult"
+      lambda:
+        handler: "com.fdd.aws.lambda.FddLambdaHandler::handleRequest"
+        memory: 512
+        timeout: 30
+        environment:
+          FDD_FUNCTION_NAME: "userValidator"
+        url:
+          enabled: true
+          cors: true
+      security:
+        group: "user-management"
+        roles: ["USER_VALIDATOR"]
+
+    inventoryChecker:
+      name: "com.ecommerce.inventory.check"
+      component: "inventoryChecker"
+      input: "com.fdd.demo.domain.InventoryCheckRequest"
+      output: "com.fdd.demo.domain.InventoryResult"
+      lambda:
+        handler: "com.fdd.aws.lambda.FddLambdaHandler::handleRequest"
+        memory: 512
+        timeout: 30
+        environment:
+          FDD_FUNCTION_NAME: "inventoryChecker"
+        url:
+          enabled: true
+          cors: true
+      security:
+        group: "inventory-management"
+        roles: ["INVENTORY_CHECKER"]
+
+    paymentProcessor:
+      name: "com.ecommerce.payment.process"
+      component: "paymentProcessor"
+      input: "com.fdd.demo.domain.PaymentRequest"
+      output: "com.fdd.demo.domain.PaymentResult"
+      lambda:
+        handler: "com.fdd.aws.lambda.FddLambdaHandler::handleRequest"
+        memory: 1024
+        timeout: 60
+        environment:
+          FDD_FUNCTION_NAME: "paymentProcessor"
+        url:
+          enabled: true
+          cors: true
+      security:
+        group: "financial-operations"
+        roles: ["PAYMENT_PROCESSOR"]
+        elevated: true
+
+    orderProcessor:
+      name: "com.ecommerce.order.process"
+      component: "orderProcessor"
+      input: "com.fdd.demo.domain.CreateOrderRequest"
+      output: "com.fdd.demo.domain.OrderResult"
+      lambda:
+        handler: "com.fdd.aws.lambda.FddLambdaHandler::handleRequest"
+        memory: 1024
+        timeout: 120
+        environment:
+          FDD_FUNCTION_NAME: "orderProcessor"
+          # Cross-Lambda URLs for function composition
+          FDD_LAMBDA_URL_uservalidator: "${cf:fdd-lambda-demo-userValidator.FunctionUrl}"
+          FDD_LAMBDA_URL_inventorychecker: "${cf:fdd-lambda-demo-inventoryChecker.FunctionUrl}"
+          FDD_LAMBDA_URL_paymentprocessor: "${cf:fdd-lambda-demo-paymentProcessor.FunctionUrl}"
+        url:
+          enabled: true
+          cors: true
+      security:
+        group: "order-management"
+        roles: ["ORDER_PROCESSOR"]
+
+  # Cross-Lambda routing configuration
+  cross-lambda:
+    enabled: true
+    urls:
+      userValidator: "${cf:fdd-lambda-demo-userValidator.FunctionUrl}"
+      inventoryChecker: "${cf:fdd-lambda-demo-inventoryChecker.FunctionUrl}"
+      paymentProcessor: "${cf:fdd-lambda-demo-paymentProcessor.FunctionUrl}"
