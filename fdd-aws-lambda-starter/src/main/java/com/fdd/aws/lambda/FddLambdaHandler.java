@@ -12,23 +12,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-/**
- * Universal FDD Lambda Handler
- * This single handler can serve ANY Function<T,R> component
- */
 public class FddLambdaHandler implements RequestHandler<Object, Object> {
 
     private static ApplicationContext applicationContext;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    // Initialize Spring context once (cold start)
     static {
         try {
             System.setProperty("spring.main.web-application-type", "none");
             applicationContext = SpringApplication.run(FddLambdaApplication.class);
-            System.out.println("FDD Lambda Handler initialized successfully");
+            System.out.println("✅ FDD Lambda Handler initialized");
         } catch (Exception e) {
-            System.err.println("Failed to initialize FDD Lambda Handler: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("FDD initialization failed", e);
         }
@@ -36,76 +30,111 @@ public class FddLambdaHandler implements RequestHandler<Object, Object> {
 
     @Override
     public Object handleRequest(Object input, Context context) {
-        try {
-            context.getLogger().log("FDD Lambda Handler - Raw input: " + input);
+        String functionName = System.getenv("FDD_FUNCTION_NAME");
 
-            // Get the function name from environment variable
-            String functionName = System.getenv("FDD_FUNCTION_NAME");
+        try {
+            System.out.println("🚀 Processing function: " + functionName);
+            System.out.println("📥 Input type: " + input.getClass().getSimpleName());
+
             if (functionName == null) {
                 throw new RuntimeException("FDD_FUNCTION_NAME environment variable not set");
             }
 
-            context.getLogger().log("Executing FDD function: " + functionName);
-
-            // Get FDD registry and function
             FunctionRegistry registry = applicationContext.getBean(FunctionRegistry.class);
             Function<Object, Object> function = registry.getFunction(functionName)
                     .orElseThrow(() -> new RuntimeException("Function not found: " + functionName));
 
-            // Convert input to proper type
-            Object typedInput = convertInput(input, functionName, registry, context);
+            FunctionMetadata metadata = registry.getMetadata(functionName)
+                    .orElseThrow(() -> new RuntimeException("Function metadata not found: " + functionName));
 
-            // Execute the function
+            // CRITICAL FIX: Ensure proper type conversion
+            Object typedInput = ensureProperTypeConversion(input, metadata);
+
+            System.out.println("✅ Converted input to: " +
+                    (typedInput != null ? typedInput.getClass().getSimpleName() : "null"));
+
+            // Execute function
             Object result = function.apply(typedInput);
 
-            context.getLogger().log("Function executed successfully: " + result);
+            System.out.println("🎉 Function executed successfully");
 
-            // Handle HTTP response if this is a Function URL
+            // Return HTTP response if needed
             if (isHttpRequest(input)) {
                 return createHttpResponse(200, result);
-            } else {
-                return result;
             }
+            return result;
 
         } catch (Exception e) {
-            context.getLogger().log("FDD Lambda execution failed: " + e.getMessage());
+            System.err.println("❌ FDD execution failed: " + e.getMessage());
             e.printStackTrace();
 
             Map<String, Object> error = new HashMap<>();
+            error.put("functionName", functionName);
             error.put("error", "FDD_EXECUTION_FAILED");
             error.put("message", e.getMessage());
             error.put("type", e.getClass().getSimpleName());
 
             if (isHttpRequest(input)) {
                 return createHttpResponse(500, error);
-            } else {
-                return error;
             }
+            return error;
         }
     }
 
-    private Object convertInput(Object input, String functionName, FunctionRegistry registry, Context context) throws Exception {
-        Object actualInput = input;
+    private Object ensureProperTypeConversion(Object input, FunctionMetadata metadata) throws Exception {
+        Class<?> expectedType = metadata.getInputType();
+        System.out.println("🔍 Expected type: " + (expectedType != null ? expectedType.getSimpleName() : "Any"));
 
-        // Handle HTTP Function URL requests
-        if (input instanceof Map && ((Map<?, ?>) input).containsKey("body")) {
-            Map<String, Object> httpEvent = (Map<String, Object>) input;
-            String body = (String) httpEvent.get("body");
-            context.getLogger().log("Extracting body from HTTP request: " + body);
-            actualInput = objectMapper.readTree(body);
+        if (expectedType == null) {
+            return input;
         }
 
-        // Get metadata to determine input type
-        var metadataOpt = registry.getMetadata(functionName);
-        if (metadataOpt.isPresent()) {
-            FunctionMetadata metadata = metadataOpt.get();
-            Class<?> inputType = metadata.getInputType();
-            if (inputType != null) {
-                return objectMapper.convertValue(actualInput, inputType);
+        // Handle HTTP request
+        if (isHttpRequest(input)) {
+            Map<String, Object> httpEvent = (Map<String, Object>) input;
+            String jsonBody = (String) httpEvent.get("body");
+            System.out.println("📝 HTTP body: " + jsonBody);
+
+            if (jsonBody != null && !jsonBody.trim().isEmpty()) {
+                try {
+                    Object converted = objectMapper.readValue(jsonBody, expectedType);
+                    System.out.println("✅ JSON → " + expectedType.getSimpleName() + " conversion successful");
+                    return converted;
+                } catch (Exception e) {
+                    System.err.println("❌ JSON conversion failed: " + e.getMessage());
+                    throw e;
+                }
             }
         }
 
-        return actualInput;
+        // Handle direct invocation - force conversion even if input seems correct
+        try {
+            if (input.getClass().equals(expectedType)) {
+                System.out.println("✅ Input already correct type");
+                return input;
+            }
+
+            // FORCE conversion using Jackson - this handles LinkedHashMap → POJO
+            System.out.println("🔄 Force converting " + input.getClass().getSimpleName() + " → " + expectedType.getSimpleName());
+            Object converted = objectMapper.convertValue(input, expectedType);
+            System.out.println("✅ Forced conversion successful");
+            return converted;
+
+        } catch (Exception e) {
+            System.err.println("❌ Type conversion failed: " + e.getMessage());
+
+            // Last resort: try JSON round-trip
+            try {
+                System.out.println("🔄 Trying JSON round-trip conversion...");
+                String json = objectMapper.writeValueAsString(input);
+                Object converted = objectMapper.readValue(json, expectedType);
+                System.out.println("✅ JSON round-trip conversion successful");
+                return converted;
+            } catch (Exception e2) {
+                System.err.println("❌ All conversion methods failed");
+                throw new RuntimeException("Cannot convert input to " + expectedType.getSimpleName() + ": " + e.getMessage(), e);
+            }
+        }
     }
 
     private boolean isHttpRequest(Object input) {
@@ -115,11 +144,10 @@ public class FddLambdaHandler implements RequestHandler<Object, Object> {
     private Object createHttpResponse(int statusCode, Object body) {
         Map<String, Object> response = new HashMap<>();
         response.put("statusCode", statusCode);
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        headers.put("Access-Control-Allow-Origin", "*");
-        response.put("headers", headers);
+        response.put("headers", Map.of(
+                "Content-Type", "application/json",
+                "Access-Control-Allow-Origin", "*"
+        ));
 
         try {
             response.put("body", objectMapper.writeValueAsString(body));
