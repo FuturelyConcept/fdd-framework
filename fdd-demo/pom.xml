@@ -18,6 +18,7 @@
     <modules>
         <module>fdd-demo-app</module>
         <module>fdd-lambda-functions</module>
+        <module>fdd-local-testing</module>
     </modules>
 
     <dependencies>

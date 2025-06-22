@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.fdd</groupId>
+        <artifactId>fdd-demo</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>fdd-local-testing</artifactId>
+    <packaging>jar</packaging>
+    <name>FDD Local Testing</name>
+    <description>Local testing for FDD Framework with multiple Spring Boot apps</description>
+
+    <dependencies>
+        <!-- FDD Framework -->
+        <dependency>
+            <groupId>com.fdd</groupId>
+            <artifactId>fdd-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Demo domain classes -->
+        <dependency>
+            <groupId>com.fdd</groupId>
+            <artifactId>fdd-demo-app</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring Boot Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Exec plugin for easy running -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.fdd.local.UserValidatorApp</mainClass>
+                </configuration>
+            </plugin>
+
+            <!-- Spring Boot plugin -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
