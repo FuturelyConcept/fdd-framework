@@ -4,14 +4,18 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fdd.core.registry.FunctionRegistry;
-import com.fdd.core.registry.FunctionMetadata;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * CORRECTED FDD Lambda Handler - Compilation Error Fixed
+ */
 public class FddLambdaHandler implements RequestHandler<Object, Object> {
 
     private static ApplicationContext applicationContext;
@@ -44,18 +48,16 @@ public class FddLambdaHandler implements RequestHandler<Object, Object> {
             Function<Object, Object> function = registry.getFunction(functionName)
                     .orElseThrow(() -> new RuntimeException("Function not found: " + functionName));
 
-            FunctionMetadata metadata = registry.getMetadata(functionName)
-                    .orElseThrow(() -> new RuntimeException("Function metadata not found: " + functionName));
+            // Extract actual input type from Function<T,R>
+            Class<?> expectedInputType = extractInputTypeFromFunction(function);
+            System.out.println("🔍 Expected input type: " + (expectedInputType != null ? expectedInputType.getSimpleName() : "Any"));
 
-            // CRITICAL FIX: Ensure proper type conversion
-            Object typedInput = ensureProperTypeConversion(input, metadata);
-
-            System.out.println("✅ Converted input to: " +
-                    (typedInput != null ? typedInput.getClass().getSimpleName() : "null"));
+            // Enhanced type conversion
+            Object typedInput = convertToExpectedType(input, expectedInputType, functionName);
+            System.out.println("✅ Converted input to: " + (typedInput != null ? typedInput.getClass().getSimpleName() : "null"));
 
             // Execute function
             Object result = function.apply(typedInput);
-
             System.out.println("🎉 Function executed successfully");
 
             // Return HTTP response if needed
@@ -81,59 +83,160 @@ public class FddLambdaHandler implements RequestHandler<Object, Object> {
         }
     }
 
-    private Object ensureProperTypeConversion(Object input, FunctionMetadata metadata) throws Exception {
-        Class<?> expectedType = metadata.getInputType();
-        System.out.println("🔍 Expected type: " + (expectedType != null ? expectedType.getSimpleName() : "Any"));
+    /**
+     * Extract input type from Function<T,R> signature using reflection
+     */
+    private Class<?> extractInputTypeFromFunction(Function<?, ?> function) {
+        try {
+            Class<?> functionClass = function.getClass();
+            System.out.println("🔍 Analyzing function class: " + functionClass.getName());
 
-        if (expectedType == null) {
-            return input;
-        }
-
-        // Handle HTTP request
-        if (isHttpRequest(input)) {
-            Map<String, Object> httpEvent = (Map<String, Object>) input;
-            String jsonBody = (String) httpEvent.get("body");
-            System.out.println("📝 HTTP body: " + jsonBody);
-
-            if (jsonBody != null && !jsonBody.trim().isEmpty()) {
-                try {
-                    Object converted = objectMapper.readValue(jsonBody, expectedType);
-                    System.out.println("✅ JSON → " + expectedType.getSimpleName() + " conversion successful");
-                    return converted;
-                } catch (Exception e) {
-                    System.err.println("❌ JSON conversion failed: " + e.getMessage());
-                    throw e;
+            // Strategy 1: Direct interface check
+            Type[] genericInterfaces = functionClass.getGenericInterfaces();
+            for (Type genericInterface : genericInterfaces) {
+                if (genericInterface instanceof ParameterizedType) {
+                    ParameterizedType paramType = (ParameterizedType) genericInterface;
+                    if (paramType.getRawType().equals(Function.class)) {
+                        Type[] typeArgs = paramType.getActualTypeArguments();
+                        if (typeArgs.length > 0 && typeArgs[0] instanceof Class) {
+                            Class<?> inputType = (Class<?>) typeArgs[0];
+                            System.out.println("✅ Found input type from direct interface: " + inputType.getSimpleName());
+                            return inputType;
+                        }
+                    }
                 }
             }
-        }
 
-        // Handle direct invocation - force conversion even if input seems correct
-        try {
-            if (input.getClass().equals(expectedType)) {
-                System.out.println("✅ Input already correct type");
-                return input;
+            // Strategy 2: Check superclass for some Spring proxy types
+            Type genericSuperClass = functionClass.getGenericSuperclass();
+            if (genericSuperClass instanceof ParameterizedType) {
+                ParameterizedType paramType = (ParameterizedType) genericSuperClass;
+                Type[] typeArgs = paramType.getActualTypeArguments();
+                if (typeArgs.length > 0 && typeArgs[0] instanceof Class) {
+                    Class<?> inputType = (Class<?>) typeArgs[0];
+                    System.out.println("✅ Found input type from superclass: " + inputType.getSimpleName());
+                    return inputType;
+                }
             }
 
-            // FORCE conversion using Jackson - this handles LinkedHashMap → POJO
-            System.out.println("🔄 Force converting " + input.getClass().getSimpleName() + " → " + expectedType.getSimpleName());
-            Object converted = objectMapper.convertValue(input, expectedType);
-            System.out.println("✅ Forced conversion successful");
-            return converted;
+            // Strategy 3: Walk up the class hierarchy
+            Class<?> currentClass = functionClass;
+            while (currentClass != null && currentClass != Object.class) {
+                for (Type iface : currentClass.getGenericInterfaces()) {
+                    if (iface instanceof ParameterizedType) {
+                        ParameterizedType paramType = (ParameterizedType) iface;
+                        Type rawType = paramType.getRawType();
+                        if (rawType instanceof Class && Function.class.isAssignableFrom((Class<?>) rawType)) {
+                            Type[] typeArgs = paramType.getActualTypeArguments();
+                            if (typeArgs.length > 0 && typeArgs[0] instanceof Class) {
+                                Class<?> inputType = (Class<?>) typeArgs[0];
+                                System.out.println("✅ Found input type from hierarchy: " + inputType.getSimpleName());
+                                return inputType;
+                            }
+                        }
+                    }
+                }
+                currentClass = currentClass.getSuperclass();
+            }
+
+            // Strategy 4: Check if it's a Spring CGLIB proxy
+            if (functionClass.getName().contains("$$")) {
+                Class<?> originalClass = functionClass.getSuperclass();
+                System.out.println("🔍 Detected proxy, checking original class: " + originalClass.getName());
+                return extractInputTypeFromProxy(originalClass);
+            }
 
         } catch (Exception e) {
-            System.err.println("❌ Type conversion failed: " + e.getMessage());
+            System.err.println("⚠️ Could not extract input type: " + e.getMessage());
+        }
 
-            // Last resort: try JSON round-trip
-            try {
-                System.out.println("🔄 Trying JSON round-trip conversion...");
-                String json = objectMapper.writeValueAsString(input);
-                Object converted = objectMapper.readValue(json, expectedType);
-                System.out.println("✅ JSON round-trip conversion successful");
-                return converted;
-            } catch (Exception e2) {
-                System.err.println("❌ All conversion methods failed");
-                throw new RuntimeException("Cannot convert input to " + expectedType.getSimpleName() + ": " + e.getMessage(), e);
+        return null;
+    }
+
+    /**
+     * Helper method for proxy class analysis
+     */
+    private Class<?> extractInputTypeFromProxy(Class<?> actualClass) {
+        try {
+            Type[] genericInterfaces = actualClass.getGenericInterfaces();
+            for (Type genericInterface : genericInterfaces) {
+                if (genericInterface instanceof ParameterizedType) {
+                    ParameterizedType paramType = (ParameterizedType) genericInterface;
+                    if (paramType.getRawType().equals(Function.class)) {
+                        Type[] typeArgs = paramType.getActualTypeArguments();
+                        if (typeArgs.length > 0 && typeArgs[0] instanceof Class) {
+                            return (Class<?>) typeArgs[0];
+                        }
+                    }
+                }
             }
+        } catch (Exception e) {
+            System.err.println("⚠️ Proxy analysis failed: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Enhanced type conversion with multiple strategies
+     */
+    private Object convertToExpectedType(Object input, Class<?> expectedType, String functionName) throws Exception {
+        if (input == null) {
+            return null;
+        }
+
+        // Handle HTTP request body extraction
+        Object actualInput = input;
+        if (isHttpRequest(input)) {
+            Map<String, Object> httpEvent = (Map<String, Object>) input;
+            String body = (String) httpEvent.get("body");
+            System.out.println("📝 HTTP body: " + body);
+
+            if (body != null && !body.trim().isEmpty()) {
+                try {
+                    actualInput = objectMapper.readValue(body, Object.class);
+                    System.out.println("✅ Parsed HTTP body to: " + actualInput.getClass().getSimpleName());
+                } catch (Exception e) {
+                    System.err.println("❌ Failed to parse HTTP body: " + e.getMessage());
+                    throw new RuntimeException("Invalid JSON in request body", e);
+                }
+            } else {
+                actualInput = new HashMap<>(); // Empty request
+            }
+        }
+
+        // If no expected type, return parsed input
+        if (expectedType == null) {
+            System.out.println("ℹ️ No expected type specified, using parsed input");
+            return actualInput;
+        }
+
+        // If input is already the correct type, return as-is
+        if (expectedType.isAssignableFrom(actualInput.getClass())) {
+            System.out.println("✅ Input already correct type");
+            return actualInput;
+        }
+
+        // Convert LinkedHashMap/Map to POJO
+        try {
+            System.out.println("🔄 Converting " + actualInput.getClass().getSimpleName() + " → " + expectedType.getSimpleName());
+            Object converted = objectMapper.convertValue(actualInput, expectedType);
+            System.out.println("✅ ObjectMapper conversion successful");
+            return converted;
+        } catch (Exception e) {
+            System.err.println("❌ ObjectMapper conversion failed: " + e.getMessage());
+        }
+
+        // Fallback: JSON round-trip
+        try {
+            System.out.println("🔄 Trying JSON round-trip conversion...");
+            String json = objectMapper.writeValueAsString(actualInput);
+            System.out.println("📝 JSON: " + json);
+            Object converted = objectMapper.readValue(json, expectedType);
+            System.out.println("✅ JSON round-trip successful");
+            return converted;
+        } catch (Exception e) {
+            System.err.println("❌ JSON round-trip failed: " + e.getMessage());
+            throw new RuntimeException("Cannot convert input to " + expectedType.getSimpleName() + ": " + e.getMessage(), e);
         }
     }
 
