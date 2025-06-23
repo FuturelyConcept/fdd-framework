@@ -12,17 +12,30 @@
     </parent>
 
     <artifactId>fdd-demo</artifactId>
-    <name>FDD Lambda Functions - Using FDD Framework</name>
+    <name>FDD Demo Applications</name>
     <packaging>pom</packaging>
+    <description>Demo applications and examples for FDD Framework</description>
 
     <modules>
+        <!-- Original demo application for local development -->
         <module>fdd-demo-app</module>
+
+        <!-- 🚀 NEW: Shared domain classes -->
+        <module>fdd-demo-shared</module>
+
+        <!-- 🚀 NEW: Individual Lambda function modules -->
+        <module>fdd-lambda-uservalidator</module>
+        <module>fdd-lambda-inventorychecker</module>
+        <module>fdd-lambda-paymentprocessor</module>
+        <module>fdd-lambda-orderprocessor</module>
+
+        <!-- Keep other existing modules -->
         <module>fdd-lambda-functions</module>
         <module>fdd-local-testing</module>
     </modules>
 
     <dependencies>
-        <!-- FDD AWS Lambda Starter - This is the key! -->
+        <!-- Shared dependencies for all demo modules -->
         <dependency>
             <groupId>com.fdd</groupId>
             <artifactId>fdd-aws-lambda-starter</artifactId>

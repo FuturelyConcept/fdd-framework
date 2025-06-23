@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: fdd-paymentprocessor
+  main:
+    web-application-type: none
+    banner-mode: off
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+fdd:
+  function:
+    enabled: true
+    discovery:
+      enabled: false
+    monitoring:
+      enabled: false
+  security:
+    enabled: false
+
+logging:
+  level:
+    com.fdd: DEBUG
+    com.fdd.lambda.paymentprocessor: DEBUG
+    root: WARN

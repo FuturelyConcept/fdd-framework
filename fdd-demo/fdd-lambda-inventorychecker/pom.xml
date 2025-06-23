@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.fdd</groupId>
+        <artifactId>fdd-demo</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>fdd-lambda-inventorychecker</artifactId>
+    <packaging>jar</packaging>
+    <name>FDD Lambda - InventoryChecker</name>
+    <description>Dedicated InventoryChecker Lambda function using FDD Framework</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.fdd</groupId>
+            <artifactId>fdd-aws-lambda-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fdd</groupId>
+            <artifactId>fdd-demo-shared</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

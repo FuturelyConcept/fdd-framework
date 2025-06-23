@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: fdd-orderprocessor
+  main:
+    web-application-type: none
+    banner-mode: off
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+# FDD Configuration
+fdd:
+  function:
+    enabled: true
+    discovery:
+      enabled: false    # Not needed in Lambda
+    monitoring:
+      enabled: false    # Lambda handles this
+  security:
+    enabled: false      # Lambda handles this
+
+# Logging
+logging:
+  level:
+    com.fdd: DEBUG
+    com.fdd.aws.lambda: DEBUG
+    com.fdd.lambda.orderprocessor: DEBUG
+    root: WARN
