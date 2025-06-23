@@ -16,6 +16,8 @@ public class PaymentProcessorFunction implements Function<PaymentRequest, Paymen
 
     @Override
     public PaymentResult apply(PaymentRequest request) {
+        System.out.println("🚀 FDD PaymentProcessorFunction starting...");
+
         if (request == null) {
             return PaymentResult.failed("Payment request is null");
         }

@@ -14,6 +14,7 @@ public class UserValidationFunction implements Function<UserData, ValidationResu
 
     @Override
     public ValidationResult apply(UserData userData) {
+        System.out.println("🚀 FDD UserValidationFunction starting...");
         if (userData == null) {
             return ValidationResult.invalid("User data is null");
         }

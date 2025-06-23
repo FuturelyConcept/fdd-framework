@@ -14,6 +14,8 @@ public class InventoryCheckFunction implements Function<InventoryCheckRequest, I
 
     @Override
     public InventoryResult apply(InventoryCheckRequest request) {
+        System.out.println("🚀 FDD InventoryCheckFunction starting...");
+
         if (request == null) {
             return InventoryResult.unavailable("Request is null");
         }
